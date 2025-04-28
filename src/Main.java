@@ -1,4 +1,5 @@
 // Java package imports
+import java.util.Map;
 import java.util.Scanner;
 import java.util.HashMap;
 import java.util.TreeMap;
@@ -51,25 +52,25 @@ public class Main {
     static void processDay(HashMap<Integer, Scanner> dayFile, TreeMap<String, HashMap<Integer, Boolean>> attendance, TreeMap<String, String[]> info, int numSeminars, String path) {
         Workbook workbook = new XSSFWorkbook();
 
-        Sheet bsitSheet = workbook.createSheet("BSIT"); int bsitRow = 1; createHeaders(workbook, bsitSheet, numSeminars);
-        Sheet bscsSheet = workbook.createSheet("BSCS"); int bscsRow = 1; createHeaders(workbook, bscsSheet, numSeminars);
-        Sheet bsisSheet = workbook.createSheet("BSIS"); int bsisRow = 1; createHeaders(workbook, bsisSheet, numSeminars);
-        Sheet bsemcSheet = workbook.createSheet("BSEMC"); int bsemcRow = 1; createHeaders(workbook, bsemcSheet, numSeminars);
-        Sheet miscSheet = workbook.createSheet("Misc"); int miscRow = 1; createHeaders(workbook, miscSheet, numSeminars);
-
-        CellStyle presentStyle = workbook.createCellStyle();
-        XSSFColor presentColor = new XSSFColor(Color.decode("#77DD77"), null);
-        presentStyle.setFillForegroundColor(presentColor);
-        presentStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-
-        CellStyle absentStyle = workbook.createCellStyle();
-        XSSFColor absentColor = new XSSFColor(Color.decode("#FF6961"), null);
-        absentStyle.setFillForegroundColor(absentColor);
-        absentStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        Sheet bsitSheet = workbook.createSheet("BSIT");
+        int bsitRow = 1;
+        createHeaders(workbook, bsitSheet, numSeminars);
+        Sheet bscsSheet = workbook.createSheet("BSCS");
+        int bscsRow = 1;
+        createHeaders(workbook, bscsSheet, numSeminars);
+        Sheet bsisSheet = workbook.createSheet("BSIS");
+        int bsisRow = 1;
+        createHeaders(workbook, bsisSheet, numSeminars);
+        Sheet bsemcSheet = workbook.createSheet("BSEMC");
+        int bsemcRow = 1;
+        createHeaders(workbook, bsemcSheet, numSeminars);
+        Sheet miscSheet = workbook.createSheet("Misc");
+        int miscRow = 1;
+        createHeaders(workbook, miscSheet, numSeminars);
 
         int attendanceCol = 0;
 
-        for(int i = 1; i <= numSeminars; i++) { // loop for each seminar
+        for (int i = 1; i <= numSeminars; i++) { // loop for each seminar
             Scanner data = dayFile.get(i);
             data.nextLine();
 
@@ -81,17 +82,16 @@ public class Main {
 
                 // Index Reference: 1 -> email, 2 -> full name, 3 -> section
                 if (!info.containsKey(attendanceArray[1]))
-                    info.put(attendanceArray[1], new String[] {attendanceArray[2].toUpperCase().replaceAll("^\"|\"$", ""), attendanceArray[3].toUpperCase()});
+                    info.put(attendanceArray[1], new String[]{attendanceArray[2].toUpperCase().replaceAll("^\"|\"$", ""), attendanceArray[3].toUpperCase()});
 
                 HashMap<Integer, Boolean> currentAttended = new HashMap<>();
                 if (!attendance.containsKey(attendanceArray[1])) {
-                    for(int val = 1; val <= numSeminars; val++) {
+                    for (int val = 1; val <= numSeminars; val++) {
                         currentAttended.put(val, null);
                     }
                     currentAttended.put(i, true);
                     attendance.put(attendanceArray[1], currentAttended);
-                }
-                else {
+                } else {
                     currentAttended = attendance.get(attendanceArray[1]);
                     currentAttended.put(i, true);
                     attendance.put(attendanceArray[1], currentAttended);
@@ -100,125 +100,59 @@ public class Main {
         }
 
         int currentStudent = 0;
-        for(HashMap.Entry<String, String[]> entry : info.entrySet()) {
+        for (HashMap.Entry<String, String[]> entry : info.entrySet()) {
+            if (entry.getValue()[1].contains("BSIT"))
+                createStudentRow(
+                    workbook,
+                    bsitSheet,
+                    bsitRow,
+                    attendance,
+                    entry,
+                    attendanceCol,
+                    numSeminars
+                );
+            else if (entry.getValue()[1].contains("BSCS"))
+                createStudentRow(
+                    workbook,
+                    bscsSheet,
+                    bscsRow,
+                    attendance,
+                    entry,
+                    attendanceCol,
+                    numSeminars
+                );
+            else if (entry.getValue()[1].contains("BSIS"))
+                createStudentRow(
+                    workbook,
+                    bsisSheet,
+                    bsisRow,
+                    attendance,
+                    entry,
+                    attendanceCol,
+                    numSeminars
+                );
+            else if (entry.getValue()[1].contains("BSEMC"))
+                createStudentRow(
+                    workbook,
+                    bsemcSheet,
+                    bsemcRow,
+                    attendance,
+                    entry,
+                    attendanceCol,
+                    numSeminars
+                );
+            else
+                createStudentRow(
+                    workbook,
+                    miscSheet,
+                    miscRow,
+                    attendance,
+                    entry,
+                    attendanceCol,
+                    numSeminars
+                );
 
-            if(entry.getValue()[1].contains("BSIT")) {
-                Row row = bsitSheet.createRow(bsitRow++);
-
-                row.createCell(0).setCellValue(entry.getKey());
-
-                for (int val = 0; val < entry.getValue().length; val++) {
-                    row.createCell(val + 1).setCellValue(entry.getValue()[val]);
-                    attendanceCol = val+2;
-                }
-
-                for (int val = 0; val < attendance.get(entry.getKey()).size(); val++) {
-                    if(attendance.get(entry.getKey()).get(val+1) != null) {
-                        Cell cell = row.createCell(val + attendanceCol);
-                        cell.setCellValue("Present");
-                        cell.setCellStyle(presentStyle);
-                    }
-                    else {
-                        Cell cell = row.createCell(val + attendanceCol);
-                        cell.setCellValue("Absent");
-                        cell.setCellStyle(absentStyle);
-                    }
-                }
-            }
-            else if(entry.getValue()[1].contains("BSCS")) {
-                Row row = bscsSheet.createRow(bscsRow++);
-
-                row.createCell(0).setCellValue(entry.getKey());
-
-                for (int val = 0; val < entry.getValue().length; val++) {
-                    row.createCell(val + 1).setCellValue(entry.getValue()[val]);
-                    attendanceCol = val+2;
-                }
-
-                for (int val = 0; val < attendance.get(entry.getKey()).size(); val++) {
-                    if(attendance.get(entry.getKey()).get(val+1) != null) {
-                        Cell cell = row.createCell(val + attendanceCol);
-                        cell.setCellValue("Present");
-                        cell.setCellStyle(presentStyle);
-                    }
-                    else {
-                        Cell cell = row.createCell(val + attendanceCol);
-                        cell.setCellValue("Absent");
-                        cell.setCellStyle(absentStyle);
-                    }
-                }
-            }
-            else if(entry.getValue()[1].contains("BSIS")) {
-                Row row = bsisSheet.createRow(bsisRow++);
-
-                row.createCell(0).setCellValue(entry.getKey());
-
-                for (int val = 0; val < entry.getValue().length; val++) {
-                    row.createCell(val + 1).setCellValue(entry.getValue()[val]);
-                    attendanceCol = val+2;
-                }
-
-                for (int val = 0; val < attendance.get(entry.getKey()).size(); val++) {
-                    if(attendance.get(entry.getKey()).get(val+1) != null) {
-                        Cell cell = row.createCell(val + attendanceCol);
-                        cell.setCellValue("Present");
-                        cell.setCellStyle(presentStyle);
-                    }
-                    else {
-                        Cell cell = row.createCell(val + attendanceCol);
-                        cell.setCellValue("Absent");
-                        cell.setCellStyle(absentStyle);
-                    }
-                }
-            }
-            else if(entry.getValue()[1].contains("BSEMC")) {
-                Row row = bsemcSheet.createRow(bsemcRow++);
-
-                row.createCell(0).setCellValue(entry.getKey());
-
-                for (int val = 0; val < entry.getValue().length; val++) {
-                    row.createCell(val + 1).setCellValue(entry.getValue()[val]);
-                    attendanceCol = val+2;
-                }
-
-                for (int val = 0; val < attendance.get(entry.getKey()).size(); val++) {
-                    if(attendance.get(entry.getKey()).get(val+1) != null) {
-                        Cell cell = row.createCell(val + attendanceCol);
-                        cell.setCellValue("Present");
-                        cell.setCellStyle(presentStyle);
-                    }
-                    else {
-                        Cell cell = row.createCell(val + attendanceCol);
-                        cell.setCellValue("Absent");
-                        cell.setCellStyle(absentStyle);
-                    }
-                }
-            }
-            else {
-                Row row = miscSheet.createRow(miscRow++);
-
-                row.createCell(0).setCellValue(entry.getKey());
-
-                for (int val = 0; val < entry.getValue().length; val++) {
-                    row.createCell(val + 1).setCellValue(entry.getValue()[val]);
-                    attendanceCol = val+2;
-                }
-
-                for (int val = 0; val < attendance.get(entry.getKey()).size(); val++) {
-                    if(attendance.get(entry.getKey()).get(val+1) != null) {
-                        Cell cell = row.createCell(val + attendanceCol);
-                        cell.setCellValue("Present");
-                        cell.setCellStyle(presentStyle);
-                    }
-                    else {
-                        Cell cell = row.createCell(val + attendanceCol);
-                        cell.setCellValue("Absent");
-                        cell.setCellStyle(absentStyle);
-                    }
-                }
-            }
-
-            currentStudent++;
+        currentStudent++;
         }
 
         for(int i = 0; i < (numSeminars + 3); i++) {
@@ -265,6 +199,41 @@ public class Main {
             Cell topicCell = headerRow.createCell(2+i);
             topicCell.setCellValue("Topic " + i);
             topicCell.setCellStyle(headerStyle);
+        }
+    }
+
+    public static void createStudentRow(Workbook workbook, Sheet worksheet, int worksheetRow, TreeMap<String, HashMap<Integer, Boolean>> attendance, Map.Entry<String, String[]> entry, int attendanceCol, int numSeminars) {
+        CellStyle presentStyle = workbook.createCellStyle();
+        XSSFColor presentColor = new XSSFColor(Color.decode("#77DD77"), null);
+        presentStyle.setFillForegroundColor(presentColor);
+        presentStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+        CellStyle absentStyle = workbook.createCellStyle();
+        XSSFColor absentColor = new XSSFColor(Color.decode("#FF6961"), null);
+        absentStyle.setFillForegroundColor(absentColor);
+        absentStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+        Row row = worksheet.createRow(worksheetRow++);
+
+        row.createCell(0).setCellValue(entry.getKey());
+
+        for (int val = 0; val < entry.getValue().length; val++) {
+            Cell cell = row.createCell(val + 1);
+            cell.setCellValue(entry.getValue()[val]);
+            attendanceCol = val+2;
+        }
+
+        for (int val = 0; val < attendance.get(entry.getKey()).size(); val++) {
+            if(attendance.get(entry.getKey()).get(val+1) != null) {
+                Cell cell = row.createCell(val + attendanceCol);
+                cell.setCellValue("Present");
+                cell.setCellStyle(presentStyle);
+            }
+            else {
+                Cell cell = row.createCell(val + attendanceCol);
+                cell.setCellValue("Absent");
+                cell.setCellStyle(absentStyle);
+            }
         }
     }
 }
